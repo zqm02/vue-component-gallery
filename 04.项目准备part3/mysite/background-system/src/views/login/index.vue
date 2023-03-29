@@ -3,7 +3,7 @@
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
 
       <div class="title-container">
-        <h3 class="title">Login Form</h3>
+        <h3 class="title">个人空间后台系统</h3>
       </div>
 
       <el-form-item prop="username">
@@ -41,19 +41,43 @@
         </span>
       </el-form-item>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
-
-      <div class="tips">
-        <span style="margin-right:20px;">username: admin</span>
-        <span> password: any</span>
+      <!-- 验证码 -->
+      <div class="captchaContainer">
+        <el-form-item prop="captcha" class="captchaInput">
+        <span class="svg-container">
+          <svg-icon icon-class="nested" />
+        </span>
+        <el-input
+          ref="captcha"
+          v-model="loginForm.captcha"
+          placeholder="请输入验证码"
+          name="captcha"
+          type="text"
+          tabindex="3"
+          auto-complete="on"
+        />
+      </el-form-item>
+      <div class="captchaImg" @click="getCaptcha">
       </div>
+      </div>
+
+      <!-- 七天内免登录 -->
+      <div style="margin-bottom: 15px;">
+         <el-checkbox v-model="loginForm.checked" >7天内免登录</el-checkbox>
+      </div>
+
+
+      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
+
+
 
     </el-form>
   </div>
 </template>
 
 <script>
-import { validUsername } from '@/utils/validate'
+import { validUsername } from '@/utils/validate';
+import { getCaptcha} from "@/api/captcha.js";
 
 export default {
   name: 'Login',
@@ -94,7 +118,16 @@ export default {
       immediate: true
     }
   },
+  created() {
+    //一进来就从服务器获取验证码
+    this.getCaptchaFunc();
+  },
   methods: {
+    getCaptchaFunc() { 
+      getCaptcha().then(res => {
+        console.log(res);
+      })
+    },
     showPwd() {
       if (this.passwordType === 'password') {
         this.passwordType = ''
@@ -105,10 +138,15 @@ export default {
         this.$refs.password.focus()
       })
     },
+    //登录相关的方法
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
+          //进入此if，说明表单的正则验证都是通过了的
           this.loading = true
+          if (this.loginForm.checked) {
+            this.loginForm.remember = 7;
+          }
           this.$store.dispatch('user/login', this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || '/' })
             this.loading = false
@@ -120,7 +158,9 @@ export default {
           return false
         }
       })
-    }
+    },
+    //获取验证码
+    getCaptcha() { }
   }
 }
 </script>
@@ -169,6 +209,20 @@ $cursor: #fff;
     border-radius: 5px;
     color: #454545;
   }
+}
+.captchaInput{
+  width: 70%;
+
+}
+.captchaContainer {
+  display: flex;
+}
+.captchaImg{
+  width: 150px;
+  height: 50px;
+  border: 1px dotted;
+  margin-top: 2px;
+  margin-left:5px;
 }
 </style>
 
